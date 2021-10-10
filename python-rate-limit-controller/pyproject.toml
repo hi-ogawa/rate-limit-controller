@@ -1,0 +1,41 @@
+#
+# Poetry
+#
+
+[tool.poetry]
+name = "rate_limit_controller"
+version = "0.1.0"
+description = ""
+authors = ["Hiroshi Ogawa <hi.ogawa.zz@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+aiohttp = "^3.7.4"
+
+[tool.poetry.dev-dependencies]
+mypy = "^0.910"
+poethepoet = "^0.10.0"
+black = "^21.9b0"
+isort = "^5.9.3"
+pylint = "^2.11.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+#
+# Tools
+#
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.messages_control]
+disable = ["C", "R", "fixme"]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.mypy]
+strict = true
+show_error_codes = true
