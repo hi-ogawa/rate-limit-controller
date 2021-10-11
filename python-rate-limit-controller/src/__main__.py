@@ -10,9 +10,9 @@ import aiohttp
 from .rate_limit_controller import RateLimitController
 from .retry import retry
 
-RATE = 6
-INTERVAL = 1.2
-JITTER = 0.3
+RATE = 5
+INTERVAL = 1.3
+JITTER = 0.2
 
 rate_limit_controller = RateLimitController(RATE, INTERVAL, JITTER)
 
