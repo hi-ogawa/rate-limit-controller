@@ -4,7 +4,7 @@
   - rate limit controller
 
 ```sh
-$ time poetry run python -m src < ../data/test1.json > ../data/test1-out.json
+$ time poetry run python -m src < ../data/test2.json > ../data/test2-out.json
 ...
 real    0m6,938s
 user    0m0,959s
