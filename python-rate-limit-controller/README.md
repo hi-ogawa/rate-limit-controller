@@ -16,3 +16,9 @@ real    3m59,296s
 user    0m16,203s
 sys     0m2,289s
 ```
+
+```sh
+export APIKEYS="..."
+poetry run python -m src.resource_scheduler
+export count=100 && time bash demo.sh
+```
