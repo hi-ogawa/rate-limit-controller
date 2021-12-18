@@ -59,6 +59,10 @@ class ResourceScheduler:
 
 
 import os
+from datetime import datetime
+
+import aiohttp
+import aiohttp.web
 
 API_ENDPOINT = "https://api.bscscan.com/api"
 APIKYES = os.getenv("APIKEYS").split(",")
@@ -66,17 +70,26 @@ RESOURCES = [(key, 4) for key in APIKYES]
 
 scheduler = ResourceScheduler(RESOURCES)
 
-import aiohttp
-import aiohttp.web
+state = dict(counter=0)
 
 
 def request_with_apikey(
     apikey: str,
-) -> Callable[[dict[str, Any]], aiohttp.ClientResponse]:
+) -> Callable[[dict[str, Any]], str]:
     async def inner(params: dict[str, Any]) -> str:
+        state["counter"] += 1
+        idx = state["counter"]
+        beg = datetime.now()
+        print(f"[{beg}:BEG] {idx = }")
         params = params | dict(apikey=apikey)
         async with aiohttp.request("GET", API_ENDPOINT, params=params) as resp:
-            return await resp.text()
+            resp_text = await resp.text()
+            resp_json = await resp.json()
+            status = resp_json.get("status")
+            end = datetime.now()
+            diff = (end - beg).total_seconds()
+            print(f"[{end}:END] {idx = }, {status = }, {diff = }")
+            return resp_text
 
     return inner
 
