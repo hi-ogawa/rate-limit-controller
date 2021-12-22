@@ -3,23 +3,29 @@ import functools
 import random
 from asyncio import Event
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
-from typing import Any, AsyncGenerator, Awaitable, Callable, Optional, TypeVar
+from datetime import datetime, timedelta
+from typing import Any, AsyncGenerator, Awaitable, Callable, Generic, TypeVar, cast
 
-F = TypeVar("F")
+F = TypeVar("F", bound=Callable[..., Any])
+T = TypeVar("T")
 
 
-@dataclass
 class RateLimitController:
-    rate: int
-    last: Optional[Event] = None
+    def __init__(self, rate: int) -> None:
+        self.rate = rate
+        self.rate_timedelta = timedelta(seconds=1 / rate)
+        self.last = Event()
+        self.last.set()
+        self.last_timestamp = datetime.min
 
     async def context_before(self) -> None:
         last = self.last
         curr = self.last = Event()
-        if last:
-            await last.wait()
-        await asyncio.sleep(1 / self.rate)
+        await last.wait()
+        seconds = (self.last_timestamp + self.rate_timedelta - datetime.now()).total_seconds()
+        if seconds > 0:
+            await asyncio.sleep(seconds)
+        self.last_timestamp = datetime.now()
         curr.set()
 
     @asynccontextmanager
@@ -28,9 +34,8 @@ class RateLimitController:
         yield
 
 
-@dataclass
-class ResourceScheduler:
-    def __init__(self, resources: list[tuple[Any, int]]) -> None:
+class ResourceScheduler(Generic[T]):
+    def __init__(self, resources: list[tuple[T, int]]) -> None:
         self.resources = resources
         self.controllers = [RateLimitController(rate) for _, rate in resources]
         self.rng = random.Random(0xDEF1BABE)
@@ -42,20 +47,20 @@ class ResourceScheduler:
         return chosen[0]
 
     @asynccontextmanager
-    async def context(self) -> AsyncGenerator[None, Any]:
+    async def context(self) -> AsyncGenerator[T, None]:
         i = self.choose_resource_index()
         resource, _ = self.resources[i]
         controller = self.controllers[i]
         async with controller.context():
             yield resource
 
-    def decorate(self, f: Callable[[Any], Callable[..., Any]]) -> Callable[..., Any]:
+    def decorate(self, f: Callable[[T], F]) -> F:
         @functools.wraps(f)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             async with self.context() as resource:
                 return await (f(resource)(*args, **kwargs))
 
-        return wrapper
+        return cast(F, wrapper)
 
 
 import os
